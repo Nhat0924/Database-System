@@ -1,88 +1,88 @@
 <?php
 require_once 'db.php';
-function get_query($sqlQuery) {
 
-    // Establish connection
-    $conn = connect();
+if($_SERVER["REQUEST_METHOD"] == "POST") {
+    if (isset($_POST['submitted'])) {
+        if(isset($_POST['sqlQuery']) && !empty($_POST['sqlQuery'])) {
+            $pdo = connect();
+            $SQLquery = sanitize_string($_POST['sqlQuery']);
+            $query = strtolower($SQLquery);
 
-    // Retrieve SQL query from textarea and sanitize it
-    $sqlQuery = sanitize_mysql($conn, $_POST[$sqlQuery]);
-
-    // Get query
-    $query = strtolower($sqlQuery);
-    $action = array("create", "delete", "update", "insert");
-    $action_executed = false;
-    // DROP prevention
-    if (stripos($query,"drop") !== false) {
-        drop_prevention($query);
-    }
-    else {
-    // Execute ACTION statement
-        foreach ($action as $act) {
-            if (stripos($query, $act) !== false) {
-                $result = query_actions($conn, $query);
-                $action_executed = true;
-                break;
+            if(strpos($query, 'drop') !== false) {
+                die('<br><span class="error-message bold">SQL DROP statement are prohibited.</span><br>');
             }
-        }
-    }
 
-    // Execute SELECT statement
-    if (!$action_executed) {
-        $result = $conn->query($query);
-        if (!$result) {
-            echo "Query failed";
-        } else {
-            // Process the results
-            echo "<h2>Query Results:</h2>";
-            echo "<table border='1'>";
-            while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
-                echo "<tr>";
-                foreach ($row as $value) {
-                    echo "<td>$value</td>";
+            try{
+                //Need to check if this's gonna work lol
+                $action = array('create', 'update', 'delete', 'insert');
+                foreach($action as $keyword) {
+                    if(strpos($query, $keyword) !== false) {
+                        if ($keyword == 'create') {
+                            $result = $pdo->query($SQLquery);
+                            echo '<br><span class="action bold">TABLE CREATED</span>';
+                            $pdo = null;
+                            return;
+                        }
+
+                        else if ($keyword == 'update') {
+                            $result = $pdo->query($SQLquery);
+                            echo '<br><span class="action bold">TABLE UPDATED</span>';
+                            $pdo = null;
+                            return;
+                        }
+
+                        else if ($keyword == "delete") {
+                            $result = $pdo->query($SQLquery);
+                            echo '<br><span class="action bold">ROW(S) DELETED</span>';
+                            $pdo = null;
+                            return;
+                        }
+                        else if ($keyword == "insert") {
+                            $result = $pdo->query($SQLquery);
+                            echo '<br><span class="action bold">ROW(S) INSERTED</span>';
+                            $pdo = null;
+                            return;
+                        }    
+                    }
                 }
-                echo "</tr>";
+
+                $result = $pdo->query($SQLquery);
+                if (!$result) {
+                    die("Failed to execute SQL query.");
+                }
+                
+                $count = 0;
+
+                $fields_num = $result->columnCount();
+                echo "<br><table><tr>";
+                for ($i = 0; $i < $fields_num; $i++) {
+                    $columnMeta = $result->getColumnMeta($i);
+                    echo "<th>{$columnMeta['name']}</th>";
+                }
+                echo "</tr>\n";
+
+                while ($row = $result->fetch(PDO::FETCH_NUM)) {
+                    echo "<tr>";
+                    foreach($row as $cell) {
+                        echo "<td>$cell</td>";
+                    }
+                    echo "</tr>\n";
+                    $count++;
+                }
+                echo "</table>";
+
+                echo '<br><span class="bold">Number of rows retrieved: </span>' . $count;
+
+            } catch (PDOException $e) {
+                echo '<br><span class="error-message bold">Error: Invalid query statement.</span><br>';
+                echo 'Error Message: ' . htmlspecialchars($e->getMessage());
             }
-            echo "</table>";
+        
+            $pdo = null;
         }
-    }
 
-    //End connection
-$conn = null;
-}
-
-function drop_prevention($query) {
-    if (stripos($query,"drop") !== false) {
-        echo "<h2>Error: Execution of SQL DROP statement is not allowed.</h2>";
-        die();
-    }
-}
-
-function query_actions($conn, $query) {
-    // Execute actions
-    $action = array("create", "delete", "update", "insert");
-    foreach ($action as $act) {
-        if (stripos($query, $act) !== false) {
-            switch($act) {
-                case "create":
-                    $result = $conn->query($query);
-                    echo "<h2>Table Created</h2>";
-                    break;
-                case "update":
-                    $result = $conn->query($query);
-                    echo "<h2>Table Updated</h2>";
-                    break;
-                case "delete":
-                    $result = $conn->query($query);
-                    echo "<h2>Row(s) Deleted</h2>";
-                    break;
-                case "insert":
-                    $result = $conn->query($query);
-                    echo "<h2>Row inserted</h2>";
-                    break;
+        else {
+            return;
             }
-        }
     }
-
-    return $result;
 }

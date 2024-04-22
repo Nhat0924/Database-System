@@ -30,10 +30,46 @@ p {
     min-height: 150px;
     padding: 10px;
     font-size: 16px;
-    border: 1px solid gray;
-    border-radius: 5px;
+    border: 1px solid black;
     display: block;
     resize: both;
     overflow: auto;
     box-sizing: border-box;
 }
+
+.action {
+  color: green;
+}
+
+.error-message {
+    color: red;
+}
+
+.bold {
+  font-weight: bold;
+  font-size: large;
+}
+
+table {
+    size: auto;
+    color: black;
+    background: white;
+    border: 1px solid lightgray;
+    border-radius: 6px;
+    font-size: 12pt;
+    border-spacing: 0;
+  }
+  
+table caption {
+    padding:.5em;
+  }
+
+  table th, table td {
+    padding: .5em;
+    border: 1px solid lightgrey;
+  }
+
+  table th {
+    background: lightgray;
+    border: 1px solid rgb(189, 189, 189);
+  }

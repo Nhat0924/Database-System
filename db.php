@@ -25,14 +25,5 @@ function connect() {
 
 function sanitize_string($var) {
     $var = strip_tags($var);
-    $var = htmlentities($var);
-
-    return $var;
-}
-
-function sanitize_mysql($pdo, $var) {
-    $var = $pdo->quote($var);
-    $var = sanitize_string($var);
-
     return $var;
 }
